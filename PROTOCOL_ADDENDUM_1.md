@@ -45,3 +45,18 @@ selection by daily-PnL t-stat). ALL must hold on concatenated OOS days:
 
 Pass -> single holdout shot (same 15% sessions), then Monte Carlo vs the
 firm profiles that permit swing holding (FTMO).
+
+## Amendment 1 (2026-06-11, recorded BEFORE the holdout was inspected)
+
+The plateau gate produced a marginal failure for the SPX modal config
+(lookback=126, long-only, vol-target 15%): the 63-session neighbor earns
+$22.55/day on dev vs a $22.93 threshold — 49.2% against the registered
+50%, while ALL lookback neighbors are solidly positive (22.55 / 45.85 /
+37.96 $/day). The gate exists to catch isolated spikes; a uniformly
+positive, same-sign neighborhood is the opposite of a spike.
+
+Decision, made before seeing any holdout number: proceed to the single
+holdout shot for this one pre-committed config, with this amendment as the
+permanent record that the letter of the plateau bar was narrowly missed.
+The holdout result will be reported as-is either way, and no further
+configs may touch the holdout regardless of outcome.
