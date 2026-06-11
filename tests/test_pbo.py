@@ -6,10 +6,14 @@ from hightrader.backtest.pbo import cscv_pbo
 
 
 def test_pure_noise_pbo_near_half():
+    # A single noise draw has high PBO variance (splits share blocks), so
+    # calibration is checked as an average over independent draws.
     rng = np.random.default_rng(5)
-    mat = rng.normal(0, 1, size=(640, 20))
-    res = cscv_pbo(mat, n_blocks=16)
-    assert 0.3 < res.pbo < 0.7
+    pbos = [
+        cscv_pbo(rng.normal(0, 1, size=(640, 20)), n_blocks=16).pbo
+        for _ in range(12)
+    ]
+    assert 0.38 < np.mean(pbos) < 0.62
 
 
 def test_real_edge_pbo_low():

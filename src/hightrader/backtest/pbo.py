@@ -48,24 +48,43 @@ def _sharpe(x: np.ndarray) -> float:
 def cscv_pbo(
     returns_matrix: np.ndarray,
     n_blocks: int = 16,
-    score=_sharpe,
 ) -> PBOResult:
-    """returns_matrix: shape (n_periods, n_configs) of per-period PnL/returns."""
+    """returns_matrix: shape (n_periods, n_configs) of per-period PnL/returns.
+
+    Scoring is the Sharpe of concatenated periods, computed from per-block
+    sufficient statistics (sum, sumsq, count) so each of the C(S, S/2)
+    splits costs O(n_configs) instead of re-touching every row.
+    """
     T, N = returns_matrix.shape
     if N < 2:
         raise ValueError("need at least 2 configurations")
     edges = np.linspace(0, T, n_blocks + 1, dtype=int)
-    blocks = [returns_matrix[edges[i] : edges[i + 1]] for i in range(n_blocks)]
+    b_sum = np.array(
+        [returns_matrix[edges[i] : edges[i + 1]].sum(axis=0) for i in range(n_blocks)]
+    )
+    b_sumsq = np.array(
+        [(returns_matrix[edges[i] : edges[i + 1]] ** 2).sum(axis=0) for i in range(n_blocks)]
+    )
+    b_n = np.array([edges[i + 1] - edges[i] for i in range(n_blocks)], dtype=float)
+
+    def scores(block_ids) -> np.ndarray:
+        n = b_n[list(block_ids)].sum()
+        s = b_sum[list(block_ids)].sum(axis=0)
+        ss = b_sumsq[list(block_ids)].sum(axis=0)
+        mean = s / n
+        var = np.maximum((ss - n * mean**2) / (n - 1), 0.0)
+        sd = np.sqrt(var)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out = np.where(sd > 0, mean / sd, 0.0)
+        return out
 
     below_median = 0
     ranks: List[float] = []
     splits = list(combinations(range(n_blocks), n_blocks // 2))
     for ins in splits:
-        outs = [b for b in range(n_blocks) if b not in ins]
-        is_data = np.vstack([blocks[b] for b in ins])
-        oos_data = np.vstack([blocks[b] for b in outs])
-        is_scores = np.array([score(is_data[:, j]) for j in range(N)])
-        oos_scores = np.array([score(oos_data[:, j]) for j in range(N)])
+        outs = tuple(b for b in range(n_blocks) if b not in ins)
+        is_scores = scores(ins)
+        oos_scores = scores(outs)
         winner = int(np.argmax(is_scores))
         # Rank percentile of the IS winner among OOS scores (1 = best).
         rank_pct = (oos_scores < oos_scores[winner]).sum() / (N - 1)
