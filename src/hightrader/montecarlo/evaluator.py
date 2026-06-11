@@ -128,8 +128,14 @@ def simulate_eval(
     n_sims: int = 2000,
     max_days: int = 250,
     seed: int = 7,
+    block_len: int = 1,
 ) -> EvalResult:
-    """Bootstrap days through the firm rule engine at a given risk scale."""
+    """Bootstrap days through the firm rule engine at a given risk scale.
+
+    block_len > 1 samples runs of consecutive days (block bootstrap):
+    required for strategies whose daily PnL is autocorrelated (e.g. trend
+    campaigns), where iid day sampling understates streak risk.
+    """
     rng = np.random.default_rng(seed)
     n_pool = len(day_pool)
     outcomes = {s: 0 for s in Status}
@@ -137,7 +143,14 @@ def simulate_eval(
 
     for _ in range(n_sims):
         tracker = AccountTracker(profile)
-        day_idx = rng.integers(0, n_pool, size=max_days)
+        if block_len <= 1:
+            day_idx = rng.integers(0, n_pool, size=max_days)
+        else:
+            n_blocks = max_days // block_len + 1
+            starts = rng.integers(0, max(n_pool - block_len, 1), size=n_blocks)
+            day_idx = np.concatenate(
+                [np.arange(s, s + block_len) for s in starts]
+            )[:max_days]
         for d in range(max_days):
             for pnl_r, mae_r, mfe_r in day_pool[day_idx[d]]:
                 risk = policy(tracker, base_risk)
