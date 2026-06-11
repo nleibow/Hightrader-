@@ -84,11 +84,23 @@ python scripts/run_pipeline.py --csv your_5min_bars.csv --strategy orb
   kill switch. Account-copying services, group passing, and demo-feed
   exploits are fraud under firm terms and are not part of this system.
 
+## Validation campaign results (2026-06-11)
+
+A full pre-registered validation campaign was run on real data (16y of
+NAS100 and 8y of SPX minute bars; 25-instrument multi-asset daily universe).
+**See FINDINGS.md for the scoreboard and the recommendation.** Headline:
+eight strategy classes tested under PROTOCOL.md discipline (frozen grids,
+CSCV PBO, one-shot holdouts); zero cleared the bar; the SPX TSMOM dev
+candidate was killed by the 2018-regime holdout. The bankable path is
+`scripts/eval_from_returns.py`: feed any externally-validated daily P&L
+stream through the firm-rules Monte Carlo to get firm, size, P(pass), EV.
+
 ## Roadmap
 
-1. Real data: Databento/Polygon adapters, parquet cache in S3.
-2. Walk-forward optimizer: rolling train/test splits over the strategy
-   parameter grids on AWS Batch (see `infra/aws.md`).
+1. Feed the L2T2 (or any live-validated) daily P&L through
+   `eval_from_returns.py`; if EV > 0, trade the eval under the RiskGovernor.
+2. Execution-microstructure research on real tick data (Databento CME) —
+   the one surviving intraday channel; same protocol discipline.
 3. Broker adapters: MetaTrader 5 (FTMO-style) and Tradovate (Topstep-style)
    implementing `live.Broker`.
 4. Funded-phase mode: same machinery, payout-rule profiles, lower risk.
