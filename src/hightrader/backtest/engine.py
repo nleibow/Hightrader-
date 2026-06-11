@@ -78,8 +78,12 @@ class Strategy:
         """Precompute indicator columns. Must not look ahead."""
         return df
 
-    def signal(self, i: int, df: pd.DataFrame) -> Optional[Signal]:
-        """Return a Signal to enter on bar i+1's open, or None."""
+    def signal(self, i: int, rows: list) -> Optional[Signal]:
+        """Return a Signal to enter on bar i+1's open, or None.
+
+        ``rows`` is ``df.to_dict("records")`` of the prepared frame: plain
+        dicts, so per-bar access stays cheap inside walk-forward sweeps.
+        """
         raise NotImplementedError
 
 
@@ -95,6 +99,7 @@ def run_backtest(
     One position at a time. Returns the list of closed trades.
     """
     df = strategy.prepare(df.copy())
+    rows = df.to_dict("records")
     idx = df.index
     o = df["open"].to_numpy()
     h = df["high"].to_numpy()
@@ -185,6 +190,6 @@ def run_backtest(
         # 4. Ask strategy for a new signal (enters next bar).
         if pos_dir == 0 and not last_bar_of_day:
             if max_trades_per_day is None or day_trades < max_trades_per_day:
-                pending = strategy.signal(i, df)
+                pending = strategy.signal(i, rows)
 
     return trades

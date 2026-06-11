@@ -47,8 +47,8 @@ class TrendMomentum(Strategy):
         df["atr"] = atr(df, self.atr_period)
         return df
 
-    def signal(self, i: int, df: pd.DataFrame) -> Optional[Signal]:
-        row = df.iloc[i]
+    def signal(self, i: int, rows: list) -> Optional[Signal]:
+        row = rows[i]
         if row["bar_no"] < self.warmup_bars:
             return None
         if row["bar_no"] >= row["bars_in_day"] - self.cutoff:

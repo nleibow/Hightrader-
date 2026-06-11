@@ -52,8 +52,8 @@ class OpeningRangeBreakout(Strategy):
         df["or_low"] = df["low"].where(in_range).groupby(dates).transform("min")
         return df
 
-    def signal(self, i: int, df: pd.DataFrame) -> Optional[Signal]:
-        row = df.iloc[i]
+    def signal(self, i: int, rows: list) -> Optional[Signal]:
+        row = rows[i]
         if row["bar_no"] < self.range_bars:
             return None
         or_h, or_l, a = row["or_high"], row["or_low"], row["atr"]

@@ -46,7 +46,8 @@ class LiveRunner:
         df = self.strategy.prepare(self._bars.copy())
         if self.broker.positions():
             return  # brackets manage the open trade
-        sig = self.strategy.signal(len(df) - 1, df)
+        rows = df.to_dict("records")
+        sig = self.strategy.signal(len(rows) - 1, rows)
         if sig is None:
             return
 
